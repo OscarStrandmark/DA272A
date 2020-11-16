@@ -43,7 +43,7 @@ import javafx.stage.Stage;
  * @author Eudy Contreras
  *
  */
-public class AgentManager extends Application{
+public class AgentManager extends Application {
 	
 
 	/**
