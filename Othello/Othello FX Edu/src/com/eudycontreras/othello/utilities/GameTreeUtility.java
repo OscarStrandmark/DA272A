@@ -246,11 +246,11 @@ public class GameTreeUtility {
 		}
 		
 		if(move.getCurrentCell().getCellState() == BoardCellState.WHITE){
-			whiteCounter += move.getPath().size();
+			whiteCounter += move.getPath().size() + 1; //CHANGED CODE
 			blackCounter -= move.getPath().size();
 		}else{
 			whiteCounter -= move.getPath().size();
-			blackCounter += move.getPath().size();
+			blackCounter += move.getPath().size() + 1;
 		}
 		
 		state.setWhiteCount(whiteCounter);
