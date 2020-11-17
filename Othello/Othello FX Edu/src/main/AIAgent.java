@@ -44,21 +44,21 @@ public class AIAgent extends Agent {
         long afterTime = new Date().getTime();
 
         double runTime = (afterTime - beforeTime)/1000;
-        System.out.print("Time for building state tree: " + runTime + "s");
+        System.out.println("Time for building state tree: " + runTime + "s");
 
         //Val is the alpha value of best move.
         long beforeMinimaxTime = new Date().getTime();
-        int val = minimax(root,0,true,root.alpha,root.beta);
+        int val = minimax(root,0,true,Integer.MIN_VALUE,Integer.MAX_VALUE);
         long afterMinimaxTime = new Date().getTime();
 
         double runTimeMinimax = (afterMinimaxTime - beforeMinimaxTime) / 1000;
-        System.out.print("Time to run minimax: " + runTimeMinimax + "s");
+        System.out.println("Time to run minimax: " + runTimeMinimax + "s");
 
         //Get the ObjectiveWrapper for the move.
         ObjectiveWrapper theMove = null;
         List<GameBoardState> states = root.getChildStates();
         for(GameBoardState state : states) {
-            if(state.alpha == val){
+            if(state.utility == val){
                 theMove = state.getLeadingMove();
                 break;
             }
@@ -76,6 +76,7 @@ public class AIAgent extends Agent {
                 GameBoardState child = AgentController.getNewState(parent,move); //Create child state, leading move and parent is set inside this
                 parent.addChildState(child);
 
+                //Alternate which player plays a piece
                 if(turn == PlayerTurn.PLAYER_ONE) {
                     List<ObjectiveWrapper> possibleMoves = AgentController.getAvailableMoves(child,PlayerTurn.PLAYER_TWO); //Get all possible moves on child board.
                     createChildrenStates(possibleMoves,child,depth+1,PlayerTurn.PLAYER_TWO); //Recursively build tree, depth + 1 to stop infinite recursion
@@ -100,24 +101,24 @@ public class AIAgent extends Agent {
                 int bestValue = Integer.MIN_VALUE;
                 List<GameBoardState> children = node.getChildStates();
                 for(GameBoardState child : children) {
-                    int value = minimax(child,depth+1,false,node.alpha,node.beta);
+                    int value = minimax(child,depth+1,false,alpha,beta);
                     bestValue = Math.max(bestValue,value);
                     alpha = Math.max(alpha,bestValue);
                     if(beta <= alpha) break;
                 }
-                node.alpha = bestValue;
-                return bestValue;
+                node.utility = alpha;
+                return alpha;
             } else { //MIN, get best beta value from children and assign to node.
                 int bestValue = Integer.MAX_VALUE;
                 List<GameBoardState> children = node.getChildStates();
                 for(GameBoardState child : children) {
-                    int value = minimax(child,depth+1,true,node.alpha,node.beta);
+                    int value = minimax(child,depth+1,true,alpha,beta);
                     bestValue = Math.min(bestValue,value);
                     beta = Math.min(beta,bestValue);
                     if(beta <= alpha) break;
                 }
-                node.beta = bestValue;
-                return bestValue;
+                node.utility = beta;
+                return beta;
             }
         }
         return (node.getWhiteCount() - node.getBlackCount()); //This is a node at max defined depth, return as if it was a leaf node.

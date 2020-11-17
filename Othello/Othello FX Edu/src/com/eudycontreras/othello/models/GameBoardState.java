@@ -28,8 +28,7 @@ public class GameBoardState {
 	private int whiteCount = 0;
 	private int blackCount = 0;
 
-	public int alpha = Integer.MIN_VALUE;
-	public int beta  = Integer.MAX_VALUE;
+	public int utility = 0;
 
 	private boolean visited = false;
 	
