@@ -156,6 +156,8 @@ public class AgentController {
 		
 		GameBoardState root = gameBoard.getGameState();
 
+
+
 		switch(agentTurn){
 		case PLAYER_ONE:
 			root.setPlayerTurn(BoardCellState.WHITE);
@@ -882,7 +884,7 @@ public class AgentController {
 				(vulnerabilityMultiplier * vurnerability));
 	}
 	
-	public static boolean isTerminal(GameBoardState state, PlayerTurn player){
+		public static boolean isTerminal(GameBoardState state, PlayerTurn player){
 		
 		GameBoardCell[][] grid = state.getGameBoard().getCells();
 		

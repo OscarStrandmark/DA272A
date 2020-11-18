@@ -32,45 +32,63 @@ public class AIAgent extends Agent {
     @Override
     public AgentMove getMove(GameBoardState gameState) {
 
-        //Build tree
+        if(!AgentController.isTerminal(gameState,PlayerTurn.PLAYER_ONE)) { //If not terminal, do move
+            setNodesExamined(0);
+            setPrunedCounter(0);
+            setReachedLeafNodes(0);
+            setSearchDepth(0);
 
-        //GameBoardState root = new GameBoardState(gameState.getGameBoard(),true); //Create root state object.
-        //root.setPlayerTurn(BoardCellState.WHITE); //Not set when creating copy using copy constructor, bad framework
-        GameBoardState root = gameState;
-        List<ObjectiveWrapper> possibleMoves  = AgentController.getAvailableMoves(root,PlayerTurn.PLAYER_ONE); //Player two is the AI, player one is human.
+            //Build tree
 
-        long beforeTime = new Date().getTime();
-        createChildrenStates(possibleMoves,root,0,PlayerTurn.PLAYER_ONE); //Recursively build tree
-        long afterTime = new Date().getTime();
+            //GameBoardState root = new GameBoardState(gameState.getGameBoard(),true); //Create root state object.
+            //root.setPlayerTurn(BoardCellState.WHITE); //Not set when creating copy using copy constructor, bad framework
+            GameBoardState root = gameState;
+            List<ObjectiveWrapper> possibleMoves  = AgentController.getAvailableMoves(root,PlayerTurn.PLAYER_ONE); //Player two is the AI, player one is human.
 
-        double runTime = (afterTime - beforeTime)/1000;
-        System.out.println("Time for building state tree: " + runTime + "s");
+            long beforeTime = new Date().getTime();
+            createChildrenStates(possibleMoves,root,0,PlayerTurn.PLAYER_ONE); //Recursively build tree
+            long afterTime = new Date().getTime();
 
-        //Val is the alpha value of best move.
-        long beforeMinimaxTime = new Date().getTime();
-        int val = minimax(root,0,true,Integer.MIN_VALUE,Integer.MAX_VALUE);
-        long afterMinimaxTime = new Date().getTime();
+            long runTime = (afterTime - beforeTime);
+            System.out.println("Time for building state tree: " + runTime + "ms");
 
-        double runTimeMinimax = (afterMinimaxTime - beforeMinimaxTime) / 1000;
-        System.out.println("Time to run minimax: " + runTimeMinimax + "s");
+            int alpha = Integer.MIN_VALUE;
+            int beta  = Integer.MAX_VALUE;
 
-        //Get the ObjectiveWrapper for the move.
-        ObjectiveWrapper theMove = null;
-        List<GameBoardState> states = root.getChildStates();
-        for(GameBoardState state : states) {
-            if(state.utility == val){
-                theMove = state.getLeadingMove();
-                break;
+
+            //Val is the alpha value of best move.
+            long beforeMinimaxTime = new Date().getTime();
+            int val = minimax(root,0,true,alpha,beta);
+            long afterMinimaxTime = new Date().getTime();
+
+            long runTimeMinimax = (afterMinimaxTime - beforeMinimaxTime);
+            System.out.println("Time to run minimax: " + runTimeMinimax + "ms");
+
+            //Get the ObjectiveWrapper for the move.
+            ObjectiveWrapper theMove = null;
+            List<GameBoardState> states = root.getChildStates();
+            for(GameBoardState state : states) {
+                if(state.utility == val){
+                    theMove = state.getLeadingMove();
+                    break;
+                }
             }
+
+            if(theMove == null) {
+                System.out.println("move was null");
+            }
+
+            MoveWrapper move = new MoveWrapper(theMove);
+
+            return move;
         }
 
-        MoveWrapper move = new MoveWrapper(theMove);
-
-        return move;
+        return new MoveWrapper(null); //If no possible move, return null move to skip turn.
     }
 
     private void createChildrenStates (List<ObjectiveWrapper> moves, GameBoardState parent, int depth,PlayerTurn turn) {
-        if(depth <= AISettings.MAX_TREE_DEPTH) { //Check for depth of tree to stop building it.
+        if(depth > getSearchDepth()) setSearchDepth(depth);
+        if(depth < AISettings.MAX_TREE_DEPTH) { //Check for depth of tree to stop building it.
             GameBoard board = parent.getGameBoard(); //All the children will have the same parent board, so get it outside the loop to save time.
             for(ObjectiveWrapper move : moves) {
                 GameBoardState child = AgentController.getNewState(parent,move); //Create child state, leading move and parent is set inside this
@@ -84,15 +102,16 @@ public class AIAgent extends Agent {
                     List<ObjectiveWrapper> possibleMoves = AgentController.getAvailableMoves(child,PlayerTurn.PLAYER_ONE); //Get all possible moves on child board.
                     createChildrenStates(possibleMoves,child,depth+1,PlayerTurn.PLAYER_ONE); //Recursively build tree, depth + 1 to stop infinite recursion
                 }
-
             }
         }
     }
 
     private int minimax(GameBoardState node, int depth, boolean isMaximisingPlayer, int alpha, int beta) {
-        if(depth <= AISettings.MAX_TREE_DEPTH) { //Stop at depth defined in setting file
+        setNodesExamined(getNodesExamined() + 1);
+        if(depth < AISettings.MAX_TREE_DEPTH) { //Stop at depth defined in setting file
 
             if(node.getChildStates().isEmpty()) { //If current node is a leaf, return value of leaf.
+                setReachedLeafNodes(getReachedLeafNodes() + 1);
                 return (node.getWhiteCount() - node.getBlackCount()); //The higher white count the higher utility
             }
 
@@ -104,7 +123,10 @@ public class AIAgent extends Agent {
                     int value = minimax(child,depth+1,false,alpha,beta);
                     bestValue = Math.max(bestValue,value);
                     alpha = Math.max(alpha,bestValue);
-                    if(beta <= alpha) break;
+                    if(beta <= alpha) {
+                        setPrunedCounter(getPrunedCounter() + 1);
+                        break;
+                    }
                 }
                 node.utility = alpha;
                 return alpha;
@@ -115,12 +137,66 @@ public class AIAgent extends Agent {
                     int value = minimax(child,depth+1,true,alpha,beta);
                     bestValue = Math.min(bestValue,value);
                     beta = Math.min(beta,bestValue);
-                    if(beta <= alpha) break;
+                    if(beta <= alpha) {
+                        setPrunedCounter(getPrunedCounter() + 1);
+                        break;
+                    }
                 }
                 node.utility = beta;
                 return beta;
             }
         }
+        setReachedLeafNodes(getReachedLeafNodes() + 1);
         return (node.getWhiteCount() - node.getBlackCount()); //This is a node at max defined depth, return as if it was a leaf node.
+    }
+
+
+    private int minimax2(GameBoardState node, boolean isMaximisingPlayer, int alpha, int beta) {
+        int v = maxValue(node,alpha,beta);
+        return v;
+    }
+
+    private int maxValue(GameBoardState node, int alpha, int beta) {
+
+        if (node.getChildStates().isEmpty()) {
+            return (node.getWhiteCount() - node.getBlackCount());
+        }
+
+        int v = Integer.MIN_VALUE;
+
+        List<GameBoardState> children = node.getChildStates();
+        for(GameBoardState child : children) {
+            v = Math.max(v,minValue(child,alpha,beta));
+            if(v >= beta) {
+                node.utility = v;
+                System.out.println("pruned");
+                return v;
+            }
+            v = Math.max(alpha,v);
+        }
+        node.utility = v;
+        return v;
+    }
+
+    private int minValue(GameBoardState node, int alpha, int beta) {
+
+        if (node.getChildStates().isEmpty()) {
+            return (node.getWhiteCount() - node.getBlackCount());
+        }
+
+        int v = Integer.MAX_VALUE;
+
+        List<GameBoardState> children = node.getChildStates();
+        for(GameBoardState child : children) {
+            v = Math.min(v,maxValue(child,alpha,beta));
+            if (v <= alpha)  {
+                node.utility = v;
+                System.out.println("pruned");
+                return v;
+            }
+            v = Math.min(beta,v);
+        }
+        node.utility = v;
+        return v;
     }
 }
