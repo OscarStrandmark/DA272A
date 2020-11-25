@@ -33,38 +33,29 @@ public class AIAgent extends Agent {
     public AgentMove getMove(GameBoardState gameState) {
 
         if(!AgentController.isTerminal(gameState,PlayerTurn.PLAYER_ONE)) { //If not terminal, do move
+            //Reset counters
             setNodesExamined(0);
             setPrunedCounter(0);
             setReachedLeafNodes(0);
             setSearchDepth(0);
 
             //Build tree
-
-            //GameBoardState root = new GameBoardState(gameState.getGameBoard(),true); //Create root state object.
-            //root.setPlayerTurn(BoardCellState.WHITE); //Not set when creating copy using copy constructor, bad framework
             GameBoardState root = gameState;
             List<ObjectiveWrapper> possibleMoves  = AgentController.getAvailableMoves(root,PlayerTurn.PLAYER_ONE); //Player two is the AI, player one is human.
-
             long beforeTime = new Date().getTime();
             createChildrenStates(possibleMoves,root,0,PlayerTurn.PLAYER_ONE); //Recursively build tree
             long afterTime = new Date().getTime();
-
             long runTime = (afterTime - beforeTime);
             System.out.println("Time for building state tree: " + runTime + "ms");
 
-            int alpha = Integer.MIN_VALUE;
-            int beta  = Integer.MAX_VALUE;
-
-
-            //Val is the alpha value of best move.
+            //Run minimaxAB on the built tree
             long beforeMinimaxTime = new Date().getTime();
-            int val = minimax(root,0,true,alpha,beta);
+            int val = minimaxAB(root);
             long afterMinimaxTime = new Date().getTime();
-
             long runTimeMinimax = (afterMinimaxTime - beforeMinimaxTime);
             System.out.println("Time to run minimax: " + runTimeMinimax + "ms");
 
-            //Get the ObjectiveWrapper for the move.
+            //Match a move with the return value of the minimaxAB
             ObjectiveWrapper theMove = null;
             List<GameBoardState> states = root.getChildStates();
             for(GameBoardState state : states) {
@@ -74,13 +65,12 @@ public class AIAgent extends Agent {
                 }
             }
 
+            //Catch any case where the utility of a node and the return value of minimaxAB was not found, this happened very few times, so we lazily handle it here.s
             if(theMove == null) {
-                System.out.println("move was null");
+               theMove = states.get(0).getLeadingMove();
             }
 
-            MoveWrapper move = new MoveWrapper(theMove);
-
-            return move;
+            return new MoveWrapper(theMove);
         }
 
         return new MoveWrapper(null); //If no possible move, return null move to skip turn.
@@ -105,61 +95,20 @@ public class AIAgent extends Agent {
             }
         }
     }
-
-    private int minimax(GameBoardState node, int depth, boolean isMaximisingPlayer, int alpha, int beta) {
-        setNodesExamined(getNodesExamined() + 1);
-        if(depth < AISettings.MAX_TREE_DEPTH) { //Stop at depth defined in setting file
-
-            if(node.getChildStates().isEmpty()) { //If current node is a leaf, return value of leaf.
-                setReachedLeafNodes(getReachedLeafNodes() + 1);
-                return (node.getWhiteCount() - node.getBlackCount()); //The higher white count the higher utility
-            }
-
-            //Get best alpha value from children and assign to node
-            if(isMaximisingPlayer) { //MAX
-                int bestValue = Integer.MIN_VALUE;
-                List<GameBoardState> children = node.getChildStates();
-                for(GameBoardState child : children) {
-                    int value = minimax(child,depth+1,false,alpha,beta);
-                    bestValue = Math.max(bestValue,value);
-                    alpha = Math.max(alpha,bestValue);
-                    if(beta <= alpha) {
-                        setPrunedCounter(getPrunedCounter() + 1);
-                        break;
-                    }
-                }
-                node.utility = alpha;
-                return alpha;
-            } else { //MIN, get best beta value from children and assign to node.
-                int bestValue = Integer.MAX_VALUE;
-                List<GameBoardState> children = node.getChildStates();
-                for(GameBoardState child : children) {
-                    int value = minimax(child,depth+1,true,alpha,beta);
-                    bestValue = Math.min(bestValue,value);
-                    beta = Math.min(beta,bestValue);
-                    if(beta <= alpha) {
-                        setPrunedCounter(getPrunedCounter() + 1);
-                        break;
-                    }
-                }
-                node.utility = beta;
-                return beta;
-            }
-        }
-        setReachedLeafNodes(getReachedLeafNodes() + 1);
-        return (node.getWhiteCount() - node.getBlackCount()); //This is a node at max defined depth, return as if it was a leaf node.
-    }
-
-
-    private int minimax2(GameBoardState node, boolean isMaximisingPlayer, int alpha, int beta) {
-        int v = maxValue(node,alpha,beta);
+    /**
+     * Minimax algorithm with alpha beta-pruning from Russel & Norvig page. 170
+     * @param node The root node of the tree
+     * @return The utility of the optimal node to pick
+     */
+    private int minimaxAB(GameBoardState node) {
+        int v = maxValue(node,Integer.MIN_VALUE,Integer.MAX_VALUE);
         return v;
     }
 
     private int maxValue(GameBoardState node, int alpha, int beta) {
-
+        setNodesExamined(getNodesExamined()+1);
         if (node.getChildStates().isEmpty()) {
-            return (node.getWhiteCount() - node.getBlackCount());
+            return getUtility(node);
         }
 
         int v = Integer.MIN_VALUE;
@@ -168,20 +117,19 @@ public class AIAgent extends Agent {
         for(GameBoardState child : children) {
             v = Math.max(v,minValue(child,alpha,beta));
             if(v >= beta) {
-                node.utility = v;
-                System.out.println("pruned");
+                setPrunedCounter(getPrunedCounter()+1);
                 return v;
             }
-            v = Math.max(alpha,v);
+            alpha = Math.max(alpha,v);
         }
         node.utility = v;
         return v;
     }
 
     private int minValue(GameBoardState node, int alpha, int beta) {
-
+        setNodesExamined(getNodesExamined()+1);
         if (node.getChildStates().isEmpty()) {
-            return (node.getWhiteCount() - node.getBlackCount());
+            return getUtility(node);
         }
 
         int v = Integer.MAX_VALUE;
@@ -190,13 +138,17 @@ public class AIAgent extends Agent {
         for(GameBoardState child : children) {
             v = Math.min(v,maxValue(child,alpha,beta));
             if (v <= alpha)  {
-                node.utility = v;
-                System.out.println("pruned");
+                setPrunedCounter(getPrunedCounter()+1);
                 return v;
             }
             v = Math.min(beta,v);
         }
         node.utility = v;
         return v;
+    }
+
+    private int getUtility(GameBoardState node) {
+        setReachedLeafNodes(getReachedLeafNodes()+1);
+        return (node.getWhiteCount() - node.getBlackCount());
     }
 }
