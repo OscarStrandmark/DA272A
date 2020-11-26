@@ -1,17 +1,13 @@
 package main;
 
 import ABMinimax.AISettings;
-import ABMinimax.Node;
 import com.eudycontreras.othello.capsules.AgentMove;
 import com.eudycontreras.othello.capsules.MoveWrapper;
 import com.eudycontreras.othello.capsules.ObjectiveWrapper;
 import com.eudycontreras.othello.controllers.Agent;
 import com.eudycontreras.othello.controllers.AgentController;
-import com.eudycontreras.othello.enumerations.BoardCellState;
 import com.eudycontreras.othello.enumerations.PlayerTurn;
-import com.eudycontreras.othello.models.GameBoard;
 import com.eudycontreras.othello.models.GameBoardState;
-import com.eudycontreras.othello.views.GameInfoView;
 
 import java.util.List;
 import java.util.Date;
