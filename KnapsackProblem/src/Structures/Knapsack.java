@@ -40,12 +40,27 @@ public class Knapsack {
         return items.get(i);
     }
 
+    public Item getHeaviestItemInKnapsackBelowOrEqualToArgumentWeight(int weight) {
+        Item item = new Item(Integer.MIN_VALUE,Integer.MIN_VALUE);
+        for(Item i : items) {
+            if(i.getWeight() > item.getWeight() && i.getWeight() <= weight) {
+                item = i;
+                System.out.println("Heavy");
+            }
+        }
+        return item;
+    }
+
     public ArrayList<Item> getAllItems() {
         return items;
     }
 
     public Item removeItem(int i) {
         return items.remove(i);
+    }
+
+    public void removeItem(Item item) {
+        items.remove(item);
     }
 
     public int getMaxCapacity() {
@@ -62,5 +77,13 @@ public class Knapsack {
 
     public boolean isFull() {
         return (getMaxCapacity() == getCurrentWeight());
+    }
+
+    public Knapsack createCopy() {
+        Knapsack copy = new Knapsack(maxCapacity);
+        for(Item i : items) {
+            copy.addItem(new Item(i.getValue(),i.getWeight()));
+        }
+        return copy;
     }
 }
