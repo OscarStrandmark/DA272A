@@ -1,44 +1,61 @@
 import Structures.Item;
 import Structures.Knapsack;
+import Structures.Result;
 
 import java.util.*;
 
 public class Main {
 
     public static void main(String[] args) {
-        ArrayList<Item> items = createRandomItems(50);
-        ArrayList<Knapsack> knapsacks = createRandomKnapsacks(10);
 
-        ArrayList<Knapsack> greedyFirstFitResult = runGreedyBestFit(items,knapsacks);
-        printResult(greedyFirstFitResult);
+        //Use fixed items for proof or not?
+        showProof useFixed = showProof.FALSE;
 
-        System.out.println("Total value of sacks: " + valueOfAllKnapsacks(greedyFirstFitResult));
+        ArrayList<Item> items;
+        ArrayList<Knapsack> knapsacks;
+
+        if(useFixed == showProof.TRUE) {
+            items = createFixedItems();
+            knapsacks = createFixedKnapsacks();
+        } else {
+            items = createRandomItems(50);
+            knapsacks = createRandomKnapsacks(10);
+        }
+
+        Result greedyResult = runGreedyBestFit(items,knapsacks);
+        printResult(greedyResult.knapsacks);
+        items = greedyResult.items;
+
+        System.out.println("Total value of sacks: " + valueOfAllKnapsacks(greedyResult.knapsacks));
         System.out.println("\n" + "---------------------------------------------------------------------------------" + "\n");
 
-        ArrayList<Knapsack> neighborResult = runNeighbor(items, greedyFirstFitResult);
+        ArrayList<Knapsack> neighborResult = runNeighbor(items, greedyResult.knapsacks);
         printResult(neighborResult);
         System.out.println("Total value of sacks: " + valueOfAllKnapsacks(neighborResult));
 
         System.out.println("\n");
         System.out.println("Leftover Items:");
-        for (Item item : items) {
-            System.out.println("Item - Weight: " + item.getWeight() + " Value: " + item.getValue() + " Utility: " + item.getUtility());
+        if(items.size() == 0) {
+            System.out.println("None!");
+        } else {
+            for (Item item : items) {
+                System.out.println("Item - Weight: " + item.getWeight() + " Value: " + item.getValue() + " Utility: " + item.getUtility());
+            }
         }
 
-        int greedyResult = valueOfAllKnapsacks(greedyFirstFitResult);
+        int greedyResultNbr = valueOfAllKnapsacks(greedyResult.knapsacks);
         int neighbourhoodResult = valueOfAllKnapsacks(neighborResult);
         System.out.println("\n\n");
-        System.out.println(greedyResult + " --> " + neighbourhoodResult);
+        System.out.println(greedyResultNbr + " --> " + neighbourhoodResult);
     }
 
     //Greedy algorithms using a first-fit heuristic
-    public static ArrayList<Knapsack> runGreedyFirstFit(ArrayList<Item> itemsParam, ArrayList<Knapsack> knapsacksParam) {
+    public static Result runGreedyFirstFit(ArrayList<Item> items, ArrayList<Knapsack> knapsacksParam) {
 
         //Create copies of the lists to work in
         ArrayList<Knapsack> knapsacks = new ArrayList<Knapsack>(knapsacksParam.size());
         for(Knapsack sack : knapsacksParam) knapsacks.add(sack.createCopy());
-        ArrayList<Item> items = new ArrayList<Item>(itemsParam.size());
-        for(Item item : itemsParam) items.add(item.createCopy());
+
 
         //Sort items from best utility to worst
         Collections.sort(items,Comparator.comparing(Item::getUtility));
@@ -56,26 +73,22 @@ public class Main {
                 }
             }
         }
-        return knapsacks;
+        return new Result(items,knapsacks);
     }
 
     //Greedy algorithms using a best-fit heuristic
-    public static ArrayList<Knapsack> runGreedyBestFit(ArrayList<Item> itemsParam, ArrayList<Knapsack> knapsacksParam) {
+    public static Result runGreedyBestFit(ArrayList<Item> items, ArrayList<Knapsack> knapsacksParam) {
         //Create copies of the lists to work in
         ArrayList<Knapsack> knapsacks = new ArrayList<Knapsack>(knapsacksParam.size());
         for(Knapsack sack : knapsacksParam) knapsacks.add(sack.createCopy());
-        ArrayList<Item> items = new ArrayList<Item>(itemsParam.size());
-        for(Item item : itemsParam) items.add(item.createCopy());
+        ArrayList<Item> leftoverItems = new ArrayList<>();
 
         //Sort items from best utility to worst
         Collections.sort(items,Comparator.comparing(Item::getUtility));
         Collections.reverse(items);
 
         //Standard best fit
-        for (int i = 0; i < items.size(); i++) {
-
-            //Get item
-            Item item = items.get(i);
+        for (Item item : items) {
 
             //Default values to be able to detect failure later
             int bestFitKnapsackIndex = Integer.MAX_VALUE;
@@ -94,7 +107,7 @@ public class Main {
                 if(leftoverWeight > 0) {
 
                     //If current sack is better than the currently best found one.
-                    if(leftoverWeight < bestFitKnapsackLeftover) {
+                    if(leftoverWeight <= bestFitKnapsackLeftover) {
                         bestFitKnapsackIndex = j;
                         bestFitKnapsackLeftover = leftoverWeight;
                     }
@@ -103,10 +116,12 @@ public class Main {
 
             //If a fit was found
             if(bestFitKnapsackIndex != Integer.MAX_VALUE) {
-                knapsacks.get(bestFitKnapsackIndex).addItem(items.remove(i));
+                knapsacks.get(bestFitKnapsackIndex).addItem(item);
+            } else {
+                leftoverItems.add(item);
             }
         }
-        return knapsacks;
+        return new Result(leftoverItems,knapsacks);
     }
 
     //The neighbourhood search algorithm
@@ -115,13 +130,16 @@ public class Main {
         ArrayList<Knapsack> bestSolution = greedyResult;
         if(!allSacksFull(greedyResult) && items.size() > 0) { //All sacks not full and there are items left.
 
-            ArrayList<Knapsack> rotateResult = rotateItemsInKnapsacks(items,greedyResult);
+            for (int i = 0; i < 8; i++) {
+                ArrayList<Knapsack> rotateResult = rotateItemsInKnapsacks(items,bestSolution);
 
-            if(valueOfAllKnapsacks(rotateResult) > valueOfAllKnapsacks(greedyResult)) {
-                bestSolution = rotateResult;
+                if(valueOfAllKnapsacks(rotateResult) > valueOfAllKnapsacks(bestSolution)) {
+                    bestSolution = rotateResult;
+                    i = 0;
+                    System.out.println("better");
+                }
             }
         }
-
         return bestSolution;
     }
 
@@ -173,7 +191,10 @@ public class Main {
                         }
 
                         //Add that item to the empty space
-                        if (bestItem.getWeight() != Integer.MIN_VALUE) nextKnapsack.addItem(bestItem);
+                        if (bestItem.getWeight() != Integer.MIN_VALUE){
+                            nextKnapsack.addItem(bestItem);
+                            items.remove(bestItem);
+                        }
                     }
 
                     //Move on to the next sack
@@ -210,7 +231,7 @@ public class Main {
         Random random = new Random(new Date().getTime());
         ArrayList<Item> items = new ArrayList<Item>();
         for (int i = 0; i < amount; i++) {
-            items.add(new Item(random.nextInt(50)+1,random.nextInt(20)+4));
+            items.add(new Item(random.nextInt(20)+1,random.nextInt(10)+1));
         }
         Collections.sort(items, Comparator.comparing(Item::getUtility));
         Collections.reverse(items);
@@ -222,11 +243,29 @@ public class Main {
         Random random = new Random(new Date().getTime());
         ArrayList<Knapsack> knapsacks = new ArrayList<Knapsack>();
         for (int i = 0; i < amount; i++) {
-            knapsacks.add(new Knapsack(25 + random.nextInt(11))); //Capacity is 20-30
+            knapsacks.add(new Knapsack(10 + random.nextInt(11))); //Capacity is 10-20
         }
         Collections.sort(knapsacks, Comparator.comparing(Knapsack::getMaxCapacity));
         Collections.reverse(knapsacks);
         return knapsacks;
+    }
+
+    //Create a pre-defined set of knapsacks for testing
+    public static ArrayList<Knapsack> createFixedKnapsacks() {
+        ArrayList<Knapsack> knapsacks = new ArrayList<Knapsack>();
+        knapsacks.add(new Knapsack(15));
+        knapsacks.add(new Knapsack(10));
+        return knapsacks;
+    }
+
+    //Create a pre-defined set of items for testing
+    public static ArrayList<Item> createFixedItems() {
+        ArrayList<Item> items = new ArrayList<Item>();
+        items.add(new Item(5,10)); //0.5
+        items.add(new Item(4,4)); //1
+        items.add(new Item(7,5)); //1,4
+        items.add(new Item(12,6)); //2
+        return items;
     }
 
     //Print knapsacks nicely
@@ -240,5 +279,9 @@ public class Main {
             }
             System.out.println("}");
         }
+    }
+
+    private enum showProof {
+        TRUE,FALSE;
     }
 }
