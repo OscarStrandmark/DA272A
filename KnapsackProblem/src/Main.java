@@ -144,21 +144,40 @@ public class Main {
 
                 //Continue until all knapsacks have been iterated through
                 while(i != nextKnapsackIndex) {
-                    Knapsack nextKnapsack = knapsacksCopy.get(nextKnapsackIndex); //Get next knapsack
-                    Item heaviestItem = nextKnapsack.getHeaviestItemInKnapsackBelowOrEqualToArgumentWeight(sack.getFreeWeight()); //Get heaviest item in a sack below a certain weight that fits in the current sack
 
-                    if(heaviestItem.getWeight() != Integer.MIN_VALUE) { //Check if an item was found
-                        nextKnapsack.removeItem(heaviestItem); //Remove item from source sack
-                        sack.addItem(heaviestItem); //Add the item to destination sack
-                        Item bestItem = new Item(Integer.MIN_VALUE,Integer.MIN_VALUE); //Now we need to insert an item into all that leftover capacity in nextKnapsack
-                        for(Item item : items) { //Iterate through all unused items
-                            if(item.getWeight() > bestItem.getWeight() && item.getWeight() <= nextKnapsack.getFreeWeight()) { //Find the heaviest item in unused items
+                    //Get next knapsack
+                    Knapsack nextKnapsack = knapsacksCopy.get(nextKnapsackIndex);
+
+                    //Get heaviest item in a sack below a certain weight that fits in the current sack
+                    Item heaviestItem = nextKnapsack.getHeaviestItemInKnapsackBelowOrEqualToArgumentWeight(sack.getFreeWeight());
+
+                    //Check if an item was found
+                    if(heaviestItem.getWeight() != Integer.MIN_VALUE) {
+
+                        //Remove item from source sack
+                        nextKnapsack.removeItem(heaviestItem);
+
+                        //Add the item to destination sack
+                        sack.addItem(heaviestItem);
+
+                        //Now we need to insert an item into all that leftover capacity in nextKnapsack
+                        Item bestItem = new Item(Integer.MIN_VALUE,Integer.MIN_VALUE);
+
+                        //Iterate through all unused items
+                        for(Item item : items) {
+
+                            //Find the heaviest item in unused items
+                            if(item.getWeight() > bestItem.getWeight() && item.getWeight() <= nextKnapsack.getFreeWeight()) {
                                 bestItem = item;
                             }
                         }
-                        if (bestItem.getWeight() != Integer.MIN_VALUE) nextKnapsack.addItem(bestItem); //Add that item to the empty space
+
+                        //Add that item to the empty space
+                        if (bestItem.getWeight() != Integer.MIN_VALUE) nextKnapsack.addItem(bestItem);
                     }
-                    nextKnapsackIndex = ((nextKnapsackIndex + 1) % knapsacksCopy.size()); //Move on to the next sack
+
+                    //Move on to the next sack
+                    nextKnapsackIndex = ((nextKnapsackIndex + 1) % knapsacksCopy.size());
                 }
             }
         }
