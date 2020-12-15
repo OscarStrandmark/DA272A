@@ -45,7 +45,6 @@ public class Knapsack {
         for(Item i : items) {
             if(i.getWeight() > item.getWeight() && i.getWeight() <= weight) {
                 item = i;
-                System.out.println("Heavy");
             }
         }
         return item;

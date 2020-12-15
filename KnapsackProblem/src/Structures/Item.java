@@ -23,4 +23,8 @@ public class Item {
     public double getUtility() {
         return utility;
     }
+
+    public Item createCopy() {
+        return new Item(value,weight);
+    }
 }
