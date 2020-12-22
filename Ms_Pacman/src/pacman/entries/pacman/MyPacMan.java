@@ -22,55 +22,102 @@ public class MyPacMan extends Controller<MOVE>
 	private ArrayList<DataTuple> trainingData = new ArrayList<DataTuple>();
 	private ArrayList<DataTuple> testData = new ArrayList<DataTuple>();
 
-	private HashMap<String,List<String>> attributes = new HashMap<String,List<String>>();
+	private HashMap<String,ArrayList<String>> attributes = new HashMap<String,ArrayList<String>>();
 
 	private Node rootNode;
 
 
 	public MyPacMan () {
-
 		fetchData();
 		initLists();
-		rootNode = buildTree();
+		rootNode = buildTree(trainingData,attributes);
 	}
 
 	public MOVE getMove(Game game, long timeDue) 
 	{
-		//Place your game logic here to play the game as Ms Pac-Man
-		
-		return myMove;
+		return traverseTree(rootNode,new DataTuple(game,null));
 	}
 
-	private Node buildTree() {
+	private MOVE traverseTree(Node node, DataTuple tuple) {
+		MOVE m = null;
+
+		if(node.children.size() == 0) { //If leaf node
+			m = MOVE.valueOf( node.getLabel() );
+		} else {
+			//Get label of attribute
+			String attributeLabel = tuple.getValueOfAttribute(node.getLabel());
+
+			//Var for holding next node to traverse.
+			Node nextNode = null;
+
+			//Get all children nodes of node
+			ArrayList<Node> children = node.children;
+			for(Node child : children) {
+				if(child.getLabel().equals(attributeLabel)) {
+					nextNode = child;
+				}
+			}
+
+			m = traverseTree(nextNode,tuple);
+		}
+
+		return m;
+	}
+
+	private Node buildTree(ArrayList<DataTuple> D, HashMap<String,ArrayList<String>> attributeList) {
 
 		// 1: Create root node
-		Node node = new Node();
+		Node N = new Node();
 
 		// 2: If every tuple in D has the same class C, return N as a leaf node labeled as C.
-		MOVE move = trainingData.get(0).DirectionChosen;
+		MOVE move = D.get(0).DirectionChosen;
 		boolean classDiff = false;
-		for (int i = 1; i < trainingData.size(); i++) {
-			if(trainingData.get(i).DirectionChosen != move) {
+		for (int i = 1; i < D.size(); i++) {
+			if(D.get(i).DirectionChosen != move) {
 				classDiff = true;
-				i = trainingData.size();
+				i = D.size();
 			}
 		}
 		if(!classDiff) {
-			node.setLabel(move.toString());
-			return node;
+			N.setLabel(move.toString());
+			return N;
 		}
 
 		// 3: If the attribute list is empty, return N as a leaf node labeled with the majority class in D
-		if(attributes.size() == 0) {
-			node.setLabel(classMajority(trainingData).toString());
-			return node;
+		if(attributeList.size() == 0) {
+			N.setLabel(classMajority(D).toString());
+			return N;
 		}
 
 		// 4.1: Call attribute selection method on D and the attribute list, in order to choose the current attribute A
-		String A = S(trainingData,attributes);
+		String A = S(D,attributeList);
 
+		// 4.2 Label N as A and remove A from the attribute list.
+		N.setLabel(A);
+		ArrayList<String> valuesOfA = attributeList.remove(A);
 
-		return node;
+		// 4.3 For each value a_j in attribute A
+		for(String a_j : valuesOfA) {
+
+			// 4.3.1 Seperate all tuples in D so that attribute A takes the value a_j, creating the subset D_j
+			ArrayList<DataTuple> D_j = new ArrayList<DataTuple>();
+			for(DataTuple dataTuple : D) {
+				if(dataTuple.getValueOfAttribute(A).equals(a_j)) {
+					D_j.add(dataTuple);
+				}
+			}
+
+			// 4.3.2 If D_j is empty, add a child node to N labeled with the majority class in D.
+			if(D_j.size() == 0) {
+				N.addChild(new Node(classMajority(D).toString()));
+			} else {
+				// 4.3.3 Otherwise, add the resulting node from calling buildTree(D_j,attribute) as a child node to N.
+				N.addChild(buildTree(D_j,(HashMap<String,ArrayList<String>>)attributeList.clone()));
+			}
+		}
+
+		// 4.4 Return N
+		return N;
 	}
 
 
@@ -118,23 +165,112 @@ public class MyPacMan extends Controller<MOVE>
 	/**
 	 * S is the ID3 algorithm used in building the tree.
 	 * @param data
-	 * @param attributes
+	 * @param attributeValues
 	 * @return
 	 */
-	private String S(ArrayList<DataTuple> data, HashMap<String,List<String>> attributes) {
+	private String S(ArrayList<DataTuple> data, HashMap<String,ArrayList<String>> attributeValues) {
 		//Variable for holding the return string
 		String retVal = "";
 
 		//Variable for holding the best information gain value. Set to max at start for comparison later.
 		double infoGainOnAofD = Double.MAX_VALUE;
+
+		//Create list of attributes
 		ArrayList<String> attributeList = new ArrayList<>(attributes.keySet());
+
+		//Iterate through all attributes
 		for (String attribute : attributeList) {
-			
+
+			//Var for holding the info gain on the current attribute.
+			double infoThisAttribute = 0;
+
+			//Get all possible values for an attribute
+			ArrayList<String> possibleAttributeValues = attributeValues.get(attribute);
+
+			//For every possible value of the current attribute
+			for(String attributeValue : possibleAttributeValues) {
+
+				//Create empty subset of tuples
+				ArrayList<DataTuple> subset = new ArrayList<DataTuple>();
+
+				//Count occurrences
+				HashMap<String,Integer> valueCountMap = new HashMap<String,Integer>();
+				valueCountMap.put(attributeValue,0);
+
+				//Iterate though all data
+				for(DataTuple tuple : data) {
+
+					//If the tuple in the data set has the value of the currently iterating attribute value
+					if(tuple.getValueOfAttribute(attribute).equals(attributeValue)) {
+
+						//Increase attribute value count by 1
+						valueCountMap.put(attributeValue,valueCountMap.get(attributeValue) + 1);
+
+						//Add the tuple to the subset
+						subset.add(tuple);
+					}
+				}
+
+				//Map for holding direction count values
+				HashMap<MOVE,Integer> directionCountMap = new HashMap<MOVE,Integer>();
+				directionCountMap.put(MOVE.UP,0);
+				directionCountMap.put(MOVE.DOWN,0);
+				directionCountMap.put(MOVE.LEFT,0);
+				directionCountMap.put(MOVE.RIGHT,0);
+				directionCountMap.put(MOVE.NEUTRAL,0);
+
+				//Count occurrences of the different DirectionChosen values in the subset.
+				for(DataTuple tuple : subset) {
+					switch (tuple.DirectionChosen) {
+						case UP:
+							directionCountMap.put(MOVE.UP,directionCountMap.get(MOVE.UP) + 1);
+							break;
+						case DOWN:
+							directionCountMap.put(MOVE.DOWN,directionCountMap.get(MOVE.DOWN) + 1);
+							break;
+						case LEFT:
+							directionCountMap.put(MOVE.LEFT,directionCountMap.get(MOVE.LEFT) + 1);
+							break;
+						case RIGHT:
+							directionCountMap.put(MOVE.RIGHT,directionCountMap.get(MOVE.RIGHT) + 1);
+							break;
+						case NEUTRAL:
+							directionCountMap.put(MOVE.NEUTRAL,directionCountMap.get(MOVE.NEUTRAL) + 1);
+							break;
+					}
+				}
+
+				//Get count of occurrences of the given attribute value
+				double valueCount = valueCountMap.get(attributeValue);
+
+				//If there are any occurrences5
+				if(valueCount != 0) {
+					//Get value from the map for better readability
+					int upCount = directionCountMap.get(MOVE.UP);
+					int downCount = directionCountMap.get(MOVE.DOWN);
+					int leftCount = directionCountMap.get(MOVE.LEFT);
+					int rightCount = directionCountMap.get(MOVE.RIGHT);
+					int neutralCount = directionCountMap.get(MOVE.NEUTRAL);
+
+					//Math
+					double AttributeValueOccurrences = (valueCount / data.size());
+					double upInSubset = ((upCount / valueCount) * (MathHelper.Log2((upCount / valueCount))));
+					double downInSubset = ((downCount / valueCount) * (MathHelper.Log2((downCount / valueCount))));
+					double leftInSubset = ((leftCount / valueCount) * (MathHelper.Log2((leftCount / valueCount))));
+					double rightInSubset = ((rightCount / valueCount) * (MathHelper.Log2((rightCount / valueCount))));
+					double neutralInSubset = ((neutralCount / valueCount) * (MathHelper.Log2((neutralCount / valueCount))));
+
+
+					infoThisAttribute += AttributeValueOccurrences * (- upInSubset - downInSubset - rightInSubset - leftInSubset - neutralInSubset);
+				}
+			}
+
+			if(infoThisAttribute < infoGainOnAofD) {
+				infoGainOnAofD = infoThisAttribute;
+				retVal = attribute;
+			}
 		}
-
-
-
-		return "";
+		return retVal;
 	}
 
 	private void fetchData() {

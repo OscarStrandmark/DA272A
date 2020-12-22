@@ -264,4 +264,50 @@ public class DataTuple {
 		return DiscreteTag.DiscretizeDouble(aux);
 	}
 
+	//Get value of an attribute
+	public String getValueOfAttribute(String attribute) {
+		String retVal = "";
+		switch(attribute) {
+			case "isBlinkyEdible":
+				retVal = Boolean.toString(isBlinkyEdible);
+				break;
+			case "isInkyEdible":
+				retVal = Boolean.toString(isInkyEdible);
+				break;
+			case "isPinkyEdible":
+				retVal = Boolean.toString(isPinkyEdible);
+				break;
+			case "isSueEdible":
+				retVal = Boolean.toString(isSueEdible);
+				break;
+
+			case "blinkyDist":
+				retVal = discretizeDistance(blinkyDist).toString();
+				break;
+			case "inkyDist":
+				retVal = discretizeDistance(inkyDist).toString();
+				break;
+			case "pinkyDist":
+				retVal = discretizeDistance(pinkyDist).toString();
+				break;
+			case "sueDist":
+				retVal = discretizeDistance(sueDist).toString();
+				break;
+
+			case "blinkyDir":
+				retVal = blinkyDir.toString();
+				break;
+			case "inkyDir":
+				retVal = inkyDir.toString();
+				break;
+			case "pinkyDir":
+				retVal = pinkyDir.toString();
+				break;
+			case "sueDir":
+				retVal = sueDir.toString();
+				break;
+		}
+		return retVal;
+	}
+
 }

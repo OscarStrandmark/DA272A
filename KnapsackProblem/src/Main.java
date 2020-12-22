@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) {
 
         //Use fixed items for proof or not?
-        showProof useFixed = showProof.FALSE;
+        showProof useFixed = showProof.TRUE;
 
         ArrayList<Item> items;
         ArrayList<Knapsack> knapsacks;
