@@ -120,48 +120,6 @@ public class MyPacMan extends Controller<MOVE>
 		return N;
 	}
 
-
-
-	/**
-	 * Get the majority class of the parameter data
-	 * @param data
-	 * @return a MOVE
-	 */
-	private MOVE classMajority (ArrayList<DataTuple> data) {
-		ArrayList<MoveDir> moveArr = new ArrayList<MoveDir>();
-		moveArr.add(new MoveDir(MOVE.UP));
-		moveArr.add(new MoveDir(MOVE.DOWN));
-		moveArr.add(new MoveDir(MOVE.LEFT));
-		moveArr.add(new MoveDir(MOVE.RIGHT));
-		moveArr.add(new MoveDir(MOVE.NEUTRAL));
-
-		for (DataTuple tuple : data) {
-			switch (tuple.DirectionChosen) {
-				case UP:
-					moveArr.get(0).incrementCount();
-					break;
-				case DOWN:
-					moveArr.get(1).incrementCount();
-					break;
-				case LEFT:
-					moveArr.get(2).incrementCount();
-					break;
-				case RIGHT:
-					moveArr.get(3).incrementCount();
-					break;
-				case NEUTRAL:
-					moveArr.get(4).incrementCount();
-					break;
-			}
-		}
-
-		Collections.sort(moveArr,Comparator.comparing(MoveDir::getCount));
-
-		MOVE majorityMove = moveArr.get(4).move;
-
-		return majorityMove;
-	}
-
 	/**
 	 * S is the ID3 algorithm used in building the tree.
 	 * @param data
@@ -172,20 +130,22 @@ public class MyPacMan extends Controller<MOVE>
 		//Variable for holding the return string
 		String retVal = "";
 
-		//Variable for holding the best information gain value. Set to max at start for comparison later.
-		double infoGainOnAofD = Double.MAX_VALUE;
+		//Variable for holding the best information gain value. Set large at start for comparison later.
+		double infoGainOnAofD = 999999999;
 
 		//Create list of attributes
-		ArrayList<String> attributeList = new ArrayList<>(attributes.keySet());
+		ArrayList<String> attributeList = new ArrayList<>(attributeValues.keySet());
 
 		//Iterate through all attributes
 		for (String attribute : attributeList) {
 
 			//Var for holding the info gain on the current attribute.
-			double infoThisAttribute = 0;
+			double infoThisAttribute = 0.0;
 
 			//Get all possible values for an attribute
 			ArrayList<String> possibleAttributeValues = attributeValues.get(attribute);
+
+			HashMap<String,Integer> valueCountMap = new HashMap<String,Integer>();
 
 			//For every possible value of the current attribute
 			for(String attributeValue : possibleAttributeValues) {
@@ -194,7 +154,6 @@ public class MyPacMan extends Controller<MOVE>
 				ArrayList<DataTuple> subset = new ArrayList<DataTuple>();
 
 				//Count occurrences
-				HashMap<String,Integer> valueCountMap = new HashMap<String,Integer>();
 				valueCountMap.put(attributeValue,0);
 
 				//Iterate though all data
@@ -261,7 +220,7 @@ public class MyPacMan extends Controller<MOVE>
 					double neutralInSubset = ((neutralCount / valueCount) * (MathHelper.Log2((neutralCount / valueCount))));
 
 
-					infoThisAttribute += AttributeValueOccurrences * (- upInSubset - downInSubset - rightInSubset - leftInSubset - neutralInSubset);
+					infoThisAttribute = AttributeValueOccurrences * (- upInSubset - downInSubset - rightInSubset - leftInSubset - neutralInSubset);
 				}
 			}
 
@@ -270,7 +229,50 @@ public class MyPacMan extends Controller<MOVE>
 				retVal = attribute;
 			}
 		}
+		if(retVal.equals("")) {
+			int nbr = 0;
+		}
 		return retVal;
+	}
+
+	/**
+	 * Get the majority class of the parameter data
+	 * @param data
+	 * @return a MOVE
+	 */
+	private MOVE classMajority (ArrayList<DataTuple> data) {
+		ArrayList<MoveDir> moveArr = new ArrayList<MoveDir>();
+		moveArr.add(new MoveDir(MOVE.UP));
+		moveArr.add(new MoveDir(MOVE.DOWN));
+		moveArr.add(new MoveDir(MOVE.LEFT));
+		moveArr.add(new MoveDir(MOVE.RIGHT));
+		moveArr.add(new MoveDir(MOVE.NEUTRAL));
+
+		for (DataTuple tuple : data) {
+			switch (tuple.DirectionChosen) {
+				case UP:
+					moveArr.get(0).incrementCount();
+					break;
+				case DOWN:
+					moveArr.get(1).incrementCount();
+					break;
+				case LEFT:
+					moveArr.get(2).incrementCount();
+					break;
+				case RIGHT:
+					moveArr.get(3).incrementCount();
+					break;
+				case NEUTRAL:
+					moveArr.get(4).incrementCount();
+					break;
+			}
+		}
+
+		Collections.sort(moveArr,Comparator.comparing(MoveDir::getCount));
+
+		MOVE majorityMove = moveArr.get(4).move;
+
+		return majorityMove;
 	}
 
 	private void fetchData() {
@@ -328,5 +330,7 @@ public class MyPacMan extends Controller<MOVE>
 		attributes.put("pinkyDir", directionStrings);
 		attributes.put("sueDir", directionStrings);
 	}
+
+
 
 }
