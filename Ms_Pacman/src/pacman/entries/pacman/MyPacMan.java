@@ -8,6 +8,7 @@ import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * This is the class you need to modify for your entry. In particular, you need to
@@ -31,6 +32,7 @@ public class MyPacMan extends Controller<MOVE>
 		initLists();
 		ArrayList<String> attributeList = new ArrayList<String>(attributeMap.keySet());
 		rootNode = buildTree(trainingData,attributeList);
+		rootNode.print();
 	}
 
 	public MOVE getMove(Game game, long timeDue) 
@@ -45,36 +47,13 @@ public class MyPacMan extends Controller<MOVE>
 			m = MOVE.valueOf( node.getLabel() );
 		} else {
 			//Get label of attribute
-			String attributeLabel = tuple.getValueOfAttribute(node.getLabel());
+			String valueOfAttribute = tuple.getValueOfAttribute(node.getLabel());
 
 			//Var for holding next node to traverse.
 			Node nextNode = null;
 
 			//Get all children nodes of node
-			ArrayList<Node> children = node.children;
-			for(Node child : children) {
-				if(child.getLabel().equals(attributeLabel)) {
-					nextNode = child;
-				}
-			}
-
-			if(nextNode == null) {
-				System.out.println("shit is fucked");
-				Random r = new Random();
-				int i = r.nextInt(5);
-				switch (i) {
-					case 0:
-						return MOVE.UP;
-					case 1:
-						return MOVE.DOWN;
-					case 2:
-						return MOVE.LEFT;
-					case 3:
-						return MOVE.RIGHT;
-					case 4:
-						return MOVE.NEUTRAL;
-				}
-			}
+			nextNode = node.getChild(valueOfAttribute);
 
 			m = traverseTree(nextNode,tuple);
 		}
@@ -128,10 +107,10 @@ public class MyPacMan extends Controller<MOVE>
 
 			// 4.3.2 If D_j is empty, add a child node to N labeled with the majority class in D.
 			if(D_j.size() == 0) {
-				N.addChild(new Node(classMajority(D).toString()));
+				N.addChild(a_j,new Node(classMajority(D).toString()));
 			} else {
 				// 4.3.3 Otherwise, add the resulting node from calling buildTree(D_j,attribute) as a child node to N.
-				N.addChild(buildTree(D_j,(ArrayList<String>)attributeList.clone()));
+				N.addChild(a_j,buildTree(D_j,(ArrayList<String>)attributeList.clone()));
 			}
 		}
 
@@ -347,6 +326,16 @@ public class MyPacMan extends Controller<MOVE>
 		attributeMap.put("inkyDir", directionStrings);
 		attributeMap.put("pinkyDir", directionStrings);
 		attributeMap.put("sueDir", directionStrings);
+
+		//Custom attributes
+
+		attributeMap.put("atCrossroads",boolStrings);
+
+		attributeMap.put("upPossible",boolStrings);
+		attributeMap.put("downPossible",boolStrings);
+		attributeMap.put("leftPossible",boolStrings);
+		attributeMap.put("rightPossible",boolStrings);
+
 	}
 
 

@@ -1,12 +1,21 @@
 package pacman.entries.pacman;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class Node {
 
+    private BufferedWriter writer;
+
+
     private String label;
 
-    public ArrayList<Node> children = new ArrayList<Node>();
+    public HashMap<String,Node> children = new HashMap<String,Node>();
 
     public Node(){}
 
@@ -20,9 +29,36 @@ public class Node {
 
     public String getLabel() { return label; }
 
-    public void addChild(Node node) { children.add(node); }
+    public void addChild(String edgeLabel,Node destinationVertex) {
+        children.put(edgeLabel,destinationVertex);
+    }
 
-    public void printTree() {
+    public Node getChild(String key) {
+        return children.get(key);
+    }
 
+    //Print code stolen from stack overflow
+
+    public void print(){
+        print("");
+    }
+
+    private void print(String indent) {
+
+        if (children.isEmpty()) {
+            System.out.print(indent);
+            System.out.println("  L " + getLabel());
+        }
+        Map.Entry<String, Node>[] nodes = children.entrySet().toArray(new Map.Entry[0]);
+        for (int i = 0; i < nodes.length; i++) {
+            System.out.print(indent);
+            if (i == nodes.length - 1) {
+                System.out.println("L \"" + label + "\" = " + nodes[i].getKey() + ":");
+                nodes[i].getValue().print(indent + "    ");
+            } else {
+                System.out.println("|- \"" + label + "\" = " + nodes[i].getKey() + ":");
+                nodes[i].getValue().print(indent + '|' + "   ");
+            }
+        }
     }
 }

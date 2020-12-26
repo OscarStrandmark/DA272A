@@ -54,6 +54,13 @@ public class DataTuple {
 	public MOVE pinkyDir;
 	public MOVE sueDir;
 
+	//Custom attributes
+	public boolean atCrossroads = false;
+	public boolean upPossible = false;
+	public boolean downPossible = false;
+	public boolean leftPossible = false;
+	public boolean rightPossible = false;
+
 	// Util data - useful for normalization
 	public int numberOfNodesInLevel;
 	public int numberOfTotalPillsInLevel;
@@ -76,6 +83,35 @@ public class DataTuple {
 		this.currentLevelTime = game.getCurrentLevelTime();
 		this.numOfPillsLeft = game.getNumberOfActivePills();
 		this.numOfPowerPillsLeft = game.getNumberOfActivePowerPills();
+
+		//Custom attributes
+		this.atCrossroads = game.isJunction(this.pacmanPosition);
+
+		MOVE[] possibleMoves = game.getPossibleMoves(this.pacmanPosition);
+		for(MOVE m : possibleMoves) { //Set to false by default, so we set them true here if it is a possible move
+			switch (m) {
+				case UP:
+					this.upPossible = true;
+					break;
+				case DOWN:
+					this.downPossible = true;
+					break;
+				case LEFT:
+					this.leftPossible = true;
+					break;
+				case RIGHT:
+					this.rightPossible = true;
+					break;
+			}
+		}
+
+		/*
+		this.upPossible;
+		this.downPossible;
+		this.leftPossible;
+		this.rightPossible;
+		 */
+
 
 		if (game.getGhostLairTime(GHOST.BLINKY) == 0) {
 			this.isBlinkyEdible = game.isGhostEdible(GHOST.BLINKY);
@@ -166,6 +202,11 @@ public class DataTuple {
 		stringbuilder.append(this.numberOfNodesInLevel + ";");
 		stringbuilder.append(this.numberOfTotalPillsInLevel + ";");
 		stringbuilder.append(this.numberOfTotalPowerPillsInLevel + ";");
+		stringbuilder.append(this.atCrossroads + ";");
+		stringbuilder.append(this.upPossible + ";");
+		stringbuilder.append(this.downPossible + ";");
+		stringbuilder.append(this.leftPossible + ";");
+		stringbuilder.append(this.rightPossible + ";");
 
 		return stringbuilder.toString();
 	}
@@ -305,6 +346,24 @@ public class DataTuple {
 				break;
 			case "sueDir":
 				retVal = sueDir.toString();
+				break;
+
+				//Custom attributes
+			case "atCrossroads":
+				retVal = Boolean.toString(atCrossroads);
+				break;
+
+			case "upPossible":
+				retVal = Boolean.toString(upPossible);
+				break;
+			case "downPossible":
+				retVal = Boolean.toString(downPossible);
+				break;
+			case "leftPossible":
+				retVal = Boolean.toString(leftPossible);
+				break;
+			case "rightPossible":
+				retVal = Boolean.toString(rightPossible);
 				break;
 		}
 		return retVal;
