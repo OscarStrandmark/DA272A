@@ -7,7 +7,6 @@ import pacman.entries.pacman.helpclasses.MoveDir;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 
-import javax.xml.crypto.Data;
 import java.util.*;
 
 /*
@@ -22,7 +21,7 @@ public class MyPacMan extends Controller<MOVE>
 	private ArrayList<DataTuple> trainingData = new ArrayList<DataTuple>();
 	private ArrayList<DataTuple> testData = new ArrayList<DataTuple>();
 
-	private HashMap<String,ArrayList<String>> attributes = new HashMap<String,ArrayList<String>>();
+	private HashMap<String,ArrayList<String>> attributeMap = new HashMap<String,ArrayList<String>>();
 
 	private Node rootNode;
 
@@ -30,7 +29,8 @@ public class MyPacMan extends Controller<MOVE>
 	public MyPacMan () {
 		fetchData();
 		initLists();
-		rootNode = buildTree(trainingData,attributes);
+		ArrayList<String> attributeList = new ArrayList<String>(attributeMap.keySet());
+		rootNode = buildTree(trainingData,attributeList);
 	}
 
 	public MOVE getMove(Game game, long timeDue) 
@@ -58,13 +58,31 @@ public class MyPacMan extends Controller<MOVE>
 				}
 			}
 
+			if(nextNode == null) {
+				System.out.println("shit is fucked");
+				Random r = new Random();
+				int i = r.nextInt(5);
+				switch (i) {
+					case 0:
+						return MOVE.UP;
+					case 1:
+						return MOVE.DOWN;
+					case 2:
+						return MOVE.LEFT;
+					case 3:
+						return MOVE.RIGHT;
+					case 4:
+						return MOVE.NEUTRAL;
+				}
+			}
+
 			m = traverseTree(nextNode,tuple);
 		}
 
 		return m;
 	}
 
-	private Node buildTree(ArrayList<DataTuple> D, HashMap<String,ArrayList<String>> attributeList) {
+	private Node buildTree(ArrayList<DataTuple> D, ArrayList<String> attributeList) {
 
 		// 1: Create root node
 		Node N = new Node();
@@ -94,10 +112,11 @@ public class MyPacMan extends Controller<MOVE>
 
 		// 4.2 Label N as A and remove A from the attribute list.
 		N.setLabel(A);
-		ArrayList<String> valuesOfA = attributeList.remove(A);
+		attributeList.remove(A);
 
 		// 4.3 For each value a_j in attribute A
-		for(String a_j : valuesOfA) {
+		ArrayList<String> possibleValuesOfA = attributeMap.get(A);
+		for(String a_j : possibleValuesOfA) {
 
 			// 4.3.1 Seperate all tuples in D so that attribute A takes the value a_j, creating the subset D_j
 			ArrayList<DataTuple> D_j = new ArrayList<DataTuple>();
@@ -112,7 +131,7 @@ public class MyPacMan extends Controller<MOVE>
 				N.addChild(new Node(classMajority(D).toString()));
 			} else {
 				// 4.3.3 Otherwise, add the resulting node from calling buildTree(D_j,attribute) as a child node to N.
-				N.addChild(buildTree(D_j,(HashMap<String,ArrayList<String>>)attributeList.clone()));
+				N.addChild(buildTree(D_j,(ArrayList<String>)attributeList.clone()));
 			}
 		}
 
@@ -123,10 +142,10 @@ public class MyPacMan extends Controller<MOVE>
 	/**
 	 * S is the ID3 algorithm used in building the tree.
 	 * @param data
-	 * @param attributeValues
+	 * @param attributeList
 	 * @return
 	 */
-	private String S(ArrayList<DataTuple> data, HashMap<String,ArrayList<String>> attributeValues) {
+	private String S(ArrayList<DataTuple> data, ArrayList<String> attributeList) {
 		//Variable for holding the return string
 		String retVal = "";
 
@@ -134,7 +153,6 @@ public class MyPacMan extends Controller<MOVE>
 		double infoGainOnAofD = 999999999;
 
 		//Create list of attributes
-		ArrayList<String> attributeList = new ArrayList<>(attributeValues.keySet());
 
 		//Iterate through all attributes
 		for (String attribute : attributeList) {
@@ -143,7 +161,7 @@ public class MyPacMan extends Controller<MOVE>
 			double infoThisAttribute = 0.0;
 
 			//Get all possible values for an attribute
-			ArrayList<String> possibleAttributeValues = attributeValues.get(attribute);
+			ArrayList<String> possibleAttributeValues = attributeMap.get(attribute);
 
 			HashMap<String,Integer> valueCountMap = new HashMap<String,Integer>();
 
@@ -202,7 +220,7 @@ public class MyPacMan extends Controller<MOVE>
 				//Get count of occurrences of the given attribute value
 				double valueCount = valueCountMap.get(attributeValue);
 
-				//If there are any occurrences5
+				//If there are any occurrences
 				if(valueCount != 0) {
 					//Get value from the map for better readability
 					int upCount = directionCountMap.get(MOVE.UP);
@@ -220,7 +238,7 @@ public class MyPacMan extends Controller<MOVE>
 					double neutralInSubset = ((neutralCount / valueCount) * (MathHelper.Log2((neutralCount / valueCount))));
 
 
-					infoThisAttribute = AttributeValueOccurrences * (- upInSubset - downInSubset - rightInSubset - leftInSubset - neutralInSubset);
+					infoThisAttribute += AttributeValueOccurrences * (- upInSubset - downInSubset - leftInSubset - rightInSubset - neutralInSubset);
 				}
 			}
 
@@ -230,7 +248,7 @@ public class MyPacMan extends Controller<MOVE>
 			}
 		}
 		if(retVal.equals("")) {
-			int nbr = 0;
+			int nbr = 0; //Debug
 		}
 		return retVal;
 	}
@@ -300,10 +318,10 @@ public class MyPacMan extends Controller<MOVE>
 		boolStrings.add("true");
 		boolStrings.add("false");
 
-		attributes.put("isBlinkyEdible",boolStrings);
-		attributes.put("isInkyEdible",boolStrings);
-		attributes.put("isPinkyEdible",boolStrings);
-		attributes.put("isSueEdible",boolStrings);
+		attributeMap.put("isBlinkyEdible",boolStrings);
+		attributeMap.put("isInkyEdible",boolStrings);
+		attributeMap.put("isPinkyEdible",boolStrings);
+		attributeMap.put("isSueEdible",boolStrings);
 
 		ArrayList<String> distanceStrings = new ArrayList<String>();
 		distanceStrings.add("NONE");
@@ -313,10 +331,10 @@ public class MyPacMan extends Controller<MOVE>
 		distanceStrings.add("HIGH");
 		distanceStrings.add("VERY_HIGH");
 
-		attributes.put("blinkyDist", distanceStrings);
-		attributes.put("inkyDist", distanceStrings);
-		attributes.put("pinkyDist", distanceStrings);
-		attributes.put("sueDist", distanceStrings);
+		attributeMap.put("blinkyDist", distanceStrings);
+		attributeMap.put("inkyDist", distanceStrings);
+		attributeMap.put("pinkyDist", distanceStrings);
+		attributeMap.put("sueDist", distanceStrings);
 
 		ArrayList<String> directionStrings = new ArrayList<String>();
 		directionStrings.add("UP");
@@ -325,10 +343,10 @@ public class MyPacMan extends Controller<MOVE>
 		directionStrings.add("RIGHT");
 		directionStrings.add("NEUTRAL");
 
-		attributes.put("blinkyDir", directionStrings);
-		attributes.put("inkyDir", directionStrings);
-		attributes.put("pinkyDir", directionStrings);
-		attributes.put("sueDir", directionStrings);
+		attributeMap.put("blinkyDir", directionStrings);
+		attributeMap.put("inkyDir", directionStrings);
+		attributeMap.put("pinkyDir", directionStrings);
+		attributeMap.put("sueDir", directionStrings);
 	}
 
 

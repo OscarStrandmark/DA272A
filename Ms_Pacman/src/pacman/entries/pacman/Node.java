@@ -21,4 +21,8 @@ public class Node {
     public String getLabel() { return label; }
 
     public void addChild(Node node) { children.add(node); }
+
+    public void printTree() {
+
+    }
 }
