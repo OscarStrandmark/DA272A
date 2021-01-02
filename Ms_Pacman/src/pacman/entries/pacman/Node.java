@@ -12,7 +12,6 @@ public class Node {
 
     private BufferedWriter writer;
 
-
     private String label;
 
     public HashMap<String,Node> children = new HashMap<String,Node>();
@@ -43,21 +42,21 @@ public class Node {
         print("");
     }
 
-    private void print(String indent) {
+    private void print(String space) {
 
         if (children.isEmpty()) {
-            System.out.print(indent);
+            System.out.print(space);
             System.out.println("  L " + getLabel());
         }
         Map.Entry<String, Node>[] nodes = children.entrySet().toArray(new Map.Entry[0]);
         for (int i = 0; i < nodes.length; i++) {
-            System.out.print(indent);
+            System.out.print(space);
             if (i == nodes.length - 1) {
                 System.out.println("L \"" + label + "\" = " + nodes[i].getKey() + ":");
-                nodes[i].getValue().print(indent + "    ");
+                nodes[i].getValue().print(space + "    ");
             } else {
                 System.out.println("|- \"" + label + "\" = " + nodes[i].getKey() + ":");
-                nodes[i].getValue().print(indent + '|' + "   ");
+                nodes[i].getValue().print(space + '|' + "   ");
             }
         }
     }

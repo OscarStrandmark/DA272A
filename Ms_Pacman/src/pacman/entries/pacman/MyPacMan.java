@@ -8,7 +8,6 @@ import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * This is the class you need to modify for your entry. In particular, you need to
@@ -33,6 +32,7 @@ public class MyPacMan extends Controller<MOVE>
 		ArrayList<String> attributeList = new ArrayList<String>(attributeMap.keySet());
 		rootNode = buildTree(trainingData,attributeList);
 		rootNode.print();
+		calcAccuracy();
 	}
 
 	public MOVE getMove(Game game, long timeDue) 
@@ -210,11 +210,11 @@ public class MyPacMan extends Controller<MOVE>
 
 					//Math
 					double AttributeValueOccurrences = (valueCount / data.size());
-					double upInSubset = ((upCount / valueCount) * (MathHelper.Log2((upCount / valueCount))));
-					double downInSubset = ((downCount / valueCount) * (MathHelper.Log2((downCount / valueCount))));
-					double leftInSubset = ((leftCount / valueCount) * (MathHelper.Log2((leftCount / valueCount))));
-					double rightInSubset = ((rightCount / valueCount) * (MathHelper.Log2((rightCount / valueCount))));
-					double neutralInSubset = ((neutralCount / valueCount) * (MathHelper.Log2((neutralCount / valueCount))));
+					double upInSubset = ((upCount / valueCount) * (HelperClass.Log2((upCount / valueCount))));
+					double downInSubset = ((downCount / valueCount) * (HelperClass.Log2((downCount / valueCount))));
+					double leftInSubset = ((leftCount / valueCount) * (HelperClass.Log2((leftCount / valueCount))));
+					double rightInSubset = ((rightCount / valueCount) * (HelperClass.Log2((rightCount / valueCount))));
+					double neutralInSubset = ((neutralCount / valueCount) * (HelperClass.Log2((neutralCount / valueCount))));
 
 
 					infoThisAttribute += AttributeValueOccurrences * (- upInSubset - downInSubset - leftInSubset - rightInSubset - neutralInSubset);
@@ -290,6 +290,23 @@ public class MyPacMan extends Controller<MOVE>
 		}
 	}
 
+	private void calcAccuracy() {
+
+		double hit = 0;
+
+		for(DataTuple d : testData) {
+			MOVE testMove = d.DirectionChosen;
+			MOVE resultMove = traverseTree(rootNode,d);
+			if(testMove == resultMove) {
+				hit++;
+			}
+		}
+
+		double accuracy = hit / testData.size();
+
+		System.out.println("\nTree Accuracy: " + accuracy + "\n");
+	}
+
 	private void initLists() {
 		//Add all attributes and their discrete possible values to attributes
 
@@ -337,7 +354,4 @@ public class MyPacMan extends Controller<MOVE>
 		attributeMap.put("rightPossible",boolStrings);
 
 	}
-
-
-
 }

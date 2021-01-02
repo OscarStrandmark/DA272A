@@ -105,14 +105,6 @@ public class DataTuple {
 			}
 		}
 
-		/*
-		this.upPossible;
-		this.downPossible;
-		this.leftPossible;
-		this.rightPossible;
-		 */
-
-
 		if (game.getGhostLairTime(GHOST.BLINKY) == 0) {
 			this.isBlinkyEdible = game.isGhostEdible(GHOST.BLINKY);
 			this.blinkyDist = game.getShortestPathDistance(game.getPacmanCurrentNodeIndex(), game.getGhostCurrentNodeIndex(GHOST.BLINKY));
