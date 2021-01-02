@@ -292,6 +292,12 @@ public class MyPacMan extends Controller<MOVE>
 
 	private void calcAccuracy() {
 
+		double upCount = 0;
+		double downCount = 0;
+		double leftCount = 0;
+		double rightCount = 0;
+		double neutralCount = 0;
+
 		double hit = 0;
 
 		for(DataTuple d : testData) {
@@ -300,11 +306,34 @@ public class MyPacMan extends Controller<MOVE>
 			if(testMove == resultMove) {
 				hit++;
 			}
+			switch(testMove) {
+				case UP:
+					upCount++;
+					break;
+				case DOWN:
+					downCount++;
+					break;
+				case LEFT:
+					leftCount++;
+					break;
+				case RIGHT:
+					rightCount++;
+					break;
+				case NEUTRAL:
+					neutralCount++;
+					break;
+			}
 		}
 
 		double accuracy = hit / testData.size();
 
 		System.out.println("\nTree Accuracy: " + accuracy + "\n");
+
+		System.out.println("Up: " + (upCount / testData.size()));
+		System.out.println("Down: " + (downCount / testData.size()));
+		System.out.println("Left: " + (leftCount / testData.size()));
+		System.out.println("Right: " + (rightCount / testData.size()));
+		System.out.println("Neutral: " + (neutralCount / testData.size()));
 	}
 
 	private void initLists() {
@@ -331,6 +360,7 @@ public class MyPacMan extends Controller<MOVE>
 		attributeMap.put("inkyDist", distanceStrings);
 		attributeMap.put("pinkyDist", distanceStrings);
 		attributeMap.put("sueDist", distanceStrings);
+
 
 		ArrayList<String> directionStrings = new ArrayList<String>();
 		directionStrings.add("UP");

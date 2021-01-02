@@ -3,6 +3,7 @@ package pacman.entries.pacman;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +40,16 @@ public class Node {
     //Print code stolen from stack overflow
 
     public void print(){
-        print("");
+        try {
+            PrintStream filePrint = new PrintStream("W:\\git\\DA272A\\Ms_Pacman\\src\\pacman\\entries\\pacman\\outputTree.txt");
+            System.setOut(filePrint);
+            print("");
+        } catch (Exception e) {
+            print("");
+            System.err.println("Failed to write to file.");
+            e.printStackTrace();
+        }
+
     }
 
     private void print(String space) {
